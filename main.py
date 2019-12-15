@@ -1,39 +1,33 @@
-from PIL import Image
+from PIL import Image, ImageFilter, ImageOps
 
-NEIGHBORHOOD_DIFFERENCE_THRES = 128 * (3 ** 0.5)
+NEIGHBORHOOD_DIFFERENCE_THRES = 50
 
 def distance(c1, c2=(0, 0, 0)):
     return sum((x - y) ** 2 for x, y in zip(c1, c2)) ** 0.5
 
-def points_within_distance(x, y, width, height, neighborhood, values):
-    x_idxs = range(max(0, x - neighborhood), min(x + neighborhood + 1, width))
-    y_idxs = range(max(0, y - neighborhood), min(y + neighborhood + 1, height))
-    ok_idxs = ((x_in, y_in) for x_in in x_idxs for y_in in y_idxs if distance((x_in, y_in), (x, y)))
-    return [values(ok_idx[0], ok_idx[1]) for ok_idx in ok_idxs]
+def borders_to_polygons(borders, distance_thres):
+    paths = []
+    point = borders.pop()
+    curr_path = [point]
+    while len(borders) > 0:
+        probably_next = min(borders, key=lambda nbr: distance(nbr, point))
+        borders.remove(probably_next)
+        if distance(point, probably_next) > distance_thres:
+            paths.append(curr_path)
+            curr_path = [probably_next]
+        else:
+            curr_path.append(probably_next)
+        point = probably_next
+    return paths
 
-def get_border_pixels(width, height, grayscale, neighborhood):
-    border_pix = []
-    for x in range(width):
-        for y in range(height):
-            pts = points_within_distance(x, y, width, height,
-                                         neighborhood, lambda i, j: grayscale[i][j])
-            if sum(pts) >= NEIGHBORHOOD_DIFFERENCE_THRES * len(pts) / 2:
-                border_pix.append((x, y))
-    return border_pix
-
-def main(in_file, out_file, neighborhood):
+def main(in_file, out_file):
     im = Image.open(in_file)
-    pix = im.load()
     width, height = im.size
-    grayscale = [[sum(distance(pix[x, y], nbr)
-                      for nbr in points_within_distance(x, y, width, height,
-                                                        neighborhood, lambda i, j: pix[i, j]))
-                  for y in range(height)]
-                 for x in range(width)]
-    borders = get_border_pixels(width, height, grayscale, neighborhood)
-    with open(out_file, 'w') as output:
-        for b in borders:
-            output.write(str(b))
+    edgy_im = ImageOps.invert(im.filter(ImageFilter.FIND_EDGES))
+    edgy_pix = edgy_im.load()
+    borders = {(x, y) for x in range(width) for y in range(height) if distance(edgy_pix[x, y]) < 20}
+    polygons = borders_to_polygons(borders, 4)
+
 
 if __name__ == "__main__":
     from sys import argv
