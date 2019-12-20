@@ -10,7 +10,9 @@ def borders_to_polygons(borders, distance_thres):
     point = borders.pop()
     curr_path = [point]
     while len(borders) > 0:
-        probably_next = min(borders, key=lambda nbr: distance(nbr, point))
+        # tie-breaking favors upper left for literally no reason -- we just need
+        # a way to talk about paths
+        probably_next = min(borders, key=lambda nbr: (distance(nbr, point), nbr))
         borders.remove(probably_next)
         if distance(point, probably_next) > distance_thres:
             paths.append(curr_path)
@@ -27,7 +29,6 @@ def main(in_file, out_file):
     edgy_pix = edgy_im.load()
     borders = {(x, y) for x in range(width) for y in range(height) if distance(edgy_pix[x, y]) < 20}
     polygons = borders_to_polygons(borders, 4)
-
 
 if __name__ == "__main__":
     from sys import argv
