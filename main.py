@@ -22,6 +22,13 @@ def borders_to_polygons(borders, distance_thres):
         point = probably_next
     return paths
 
+def colorize_path(pixels, polygons, colors=None):
+    if colors is None:
+        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 0, 0)]
+    for idx, path in enumerate(polygons):
+        for point in path:
+            pixels[point] = colors[idx % len(colors)]
+
 def main(in_file, out_file):
     im = Image.open(in_file)
     width, height = im.size
@@ -29,6 +36,8 @@ def main(in_file, out_file):
     edgy_pix = edgy_im.load()
     borders = {(x, y) for x in range(width) for y in range(height) if distance(edgy_pix[x, y]) < 20}
     polygons = borders_to_polygons(borders, 4)
+    colorize_path(edgy_pix, polygons)
+    edgy_im.save(out_file)
 
 if __name__ == "__main__":
     from sys import argv
