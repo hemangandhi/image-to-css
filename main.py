@@ -5,6 +5,22 @@ NEIGHBORHOOD_DIFFERENCE_THRES = 50
 def distance(c1, c2=(0, 0, 0)):
     return sum((x - y) ** 2 for x, y in zip(c1, c2)) ** 0.5
 
+class EllipseInfo:
+    @StaticMethod
+    def find_ellipses(borders, distance_thres):
+        # using
+        # http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.1.8792&rep=rep1&type=pdf
+        pass
+    def __init__(self, center, major_axis, orientation):
+        self.center = center
+        self.major_axis = major_axis
+        self.orientation = orientation
+        self.ready = False
+    def update_third_pixel(self, pixel):
+        other = 
+    def __hash__(self):
+        
+
 def borders_to_polygons(borders, distance_thres):
     paths = []
     point = borders.pop()
